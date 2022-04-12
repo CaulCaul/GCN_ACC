@@ -13,6 +13,8 @@ def More_Pipeline_model_counter(g, num_MAC=16):
     dens_X1 = 0.0127
     dens_X2 = 0.78
 
+    dens_AX1 = 0.06
+
     counter_MUL_cyc = 0
     counter_DRAM_acc = 0
 
@@ -27,8 +29,8 @@ def More_Pipeline_model_counter(g, num_MAC=16):
 
         for w1c in range(0, num_F):
             # load column of W1
-            counter_DRAM_acc += num_F * 2
-            counter_MUL_cyc += num_F
+            counter_DRAM_acc += (dens_AX1 * num_F) * 2
+            counter_MUL_cyc += (dens_AX1 * num_F)
         # get row of X2 = ReLU(AX1W1)
         counter_DRAM_acc += num_F
 
