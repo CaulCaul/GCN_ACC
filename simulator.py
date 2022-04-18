@@ -1,6 +1,6 @@
 
-from GCNAX_model import *
-from More_Pipeline_model import *
+from model.GCNAX_simple_model import *
+from model.MorePipeline_simple_model import *
 
 # g = dgl.graph(([0, 0, 1, 1, 2, 3, 3, 4],
 #                [1, 3, 2, 4, 0, 1, 4, 2]))
