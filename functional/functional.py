@@ -28,6 +28,7 @@ class MatrixProfile:
 class BufferPiece:
     def __init__(self, matrix_name: str, row_range: (int, int), col_range: (int, int), density: float = 1.0):
         self.name = matrix_name
+        self.density = density
         self.range = (row_range, col_range)  # ((r0, r1), (c0, c1))
         self.size = (row_range[1] - row_range[0]) * (col_range[1] - col_range[0]) * density
         self.shape = (row_range[1] - row_range[0], col_range[1] - col_range[0])

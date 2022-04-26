@@ -29,12 +29,13 @@ class Accelerator:
     def load_block(self, name: str, row_range: (int, int) = None, col_range: (int, int) = None):
         piece = self.dataset.select_elements(name, row_range=row_range, col_range=col_range)
         self.DRAM_acc_counter += self.buffer.load_elements(piece)
+        return piece
 
     def load_row(self, name: str, rowId: int):
-        self.load_block(name, row_range=(rowId, rowId + 1))
+        return self.load_block(name, row_range=(rowId, rowId + 1))
 
     def load_col(self, name: str, colId: int):
-        self.load_block(name, col_range=(colId, colId + 1))
+        return self.load_block(name, col_range=(colId, colId + 1))
 
     def evict_block(self, name: str, row_range: (int, int) = None, col_range: (int, int) = None, store: bool = False):
         piece = self.dataset.select_elements(name, row_range=row_range, col_range=col_range)
@@ -60,10 +61,9 @@ class Accelerator:
         return self.select_block(name, col_range=(colId, colId + 1))
 
     def matrix_mul(self, A: BufferPiece, B: BufferPiece, C: str):
-        self.MUL_counter += A.size * B.shape[0] * B.shape[1]
+        self.MUL_counter += A.density * A.shape[0] * B.shape[1]
         return BufferPiece(C, A.range[0], B.range[1], self.dataset.get_density(C))
 
     # 将计算的结果放入缓存，这不会增加DRAM的访问次数
     def generate_block(self, bufferPiece: BufferPiece):
         self.buffer.load_elements(bufferPiece)
-        

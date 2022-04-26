@@ -41,15 +41,15 @@ def GCNAX_counter(g, num_MAC = 16):
 
                 # load elements of X
                 # load elements of W
-                # load elements of B
-                counter_DRAM_acc += (dens_X1 * Dtn0 * Dtk) * (1 + Dtc0 + Dtc0)
+                # (load elements of B)
+                counter_DRAM_acc += dens_X1 * Dtn0 * Dtk
+                counter_DRAM_acc += Dtk * Dtc0
 
                 # B[tn0][tc0]+=X[tn0][tk]*W[tk][tc0]
                 counter_MUL_cyc += dens_X1 * (Dtn0 * Dtc0 * Dtk)
 
-                counter_DRAM_acc += (dens_X1 * Dtn0 * Dtk) * Dtc0
-
-            # (store elements of B)
+                # (store elements of B)
+                # counter_DRAM_acc += (dens_X1 * Dtn0 * Dtk) * Dtc0
 
             for m in range(0, M, Tm):
                 Dtm  = min(m+Tm, M) - m
@@ -59,14 +59,15 @@ def GCNAX_counter(g, num_MAC = 16):
                 # (load elements of B)
                 # load elements of A
                 # load elements of O
-                counter_DRAM_acc += (dens_A * Dtm * Dtn1) * (1 + Dtc1 + Dtc1)
+                counter_DRAM_acc += dens_A * Dtm * Dtn1
+                counter_DRAM_acc += Dtm * Dtc1
 
                 # O[tm][tc1]+=A[tm][tn1]*B[tn1][tc1]
                 counter_MUL_cyc += dens_A * (Dtm * Dtc1 * Dtn1)
 
-                counter_DRAM_acc += (dens_A * Dtm * Dtn1) * Dtc1
-
                 # store elements of O
+                counter_DRAM_acc += Dtm * Dtc1
+
 
     # layer 2
     for n0 in range(0, N, Tn0):
@@ -78,15 +79,16 @@ def GCNAX_counter(g, num_MAC = 16):
 
                 # load elements of X
                 # load elements of W
-                # load elements of B
-                counter_DRAM_acc += (dens_X2 * Dtn0 * Dtk) * (1 + Dtc0 + Dtc0)
+                # (load elements of B)
+                counter_DRAM_acc += dens_X2 * Dtn0 * Dtk
+                counter_DRAM_acc += Dtk * Dtc0
 
                 # B[tn0][tc0]+=X[tn0][tk]*W[tk][tc0]
                 counter_MUL_cyc += dens_X2 * (Dtn0 * Dtc0 * Dtk)
 
-                counter_DRAM_acc += (dens_X2 * Dtn0 * Dtk) * Dtc0
+                # (store elements of B)
+                # counter_DRAM_acc += (dens_X2 * Dtn0 * Dtk) * Dtc0
 
-            # (store elements of B)
 
             for m in range(0, M, Tm):
                 Dtm  = min(m+Tm, M) - m
@@ -96,18 +98,19 @@ def GCNAX_counter(g, num_MAC = 16):
                 # (load elements of B)
                 # load elements of A
                 # load elements of O
-                counter_DRAM_acc += (dens_A * Dtm * Dtn1) * (1 + Dtc1 + Dtc1)
+                counter_DRAM_acc += dens_A * Dtm * Dtn1
+                counter_DRAM_acc += Dtm * Dtc1
 
                 # O[tm][tc1]+=A[tm][tn1]*B[tn1][tc1]
                 counter_MUL_cyc += dens_A * (Dtm * Dtc1 * Dtn1)
 
-                counter_DRAM_acc += (dens_A * Dtm * Dtn1) * Dtc1
-
                 # store elements of O
+                counter_DRAM_acc += Dtm * Dtc1
+
 
     counter_MUL_cyc /= num_MAC
 
-    print("\nGCNAX at layers = 2 , MACs =", num_MAC, ", No on chip cache.")
+    print("\nGCNAX at layers = 2 , MACs =", num_MAC, ", small on chip cache.")
     print("MUL cycles  = ", counter_MUL_cyc)
     print("DRAM access = ", counter_DRAM_acc)
 
