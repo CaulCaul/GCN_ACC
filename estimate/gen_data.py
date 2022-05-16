@@ -15,14 +15,14 @@ n, k = X0.shape
 W0 = np.random.rand(k, k)
 W0 = 2 * W0 - 1
 # print(type(W0))
-B0 = X0*W0
+B0 = X0.dot(W0)
 # print(type(B0), B0.shape)
-D0 = A*X0
+D0 = A.dot(X0)
 
-X1 = A*X0*W0
+X1 = D0.dot(W0)
 X1 = 1 * (X1 > 0) * X1
 X1 = scipy.sparse.csr_matrix(X1)
-# print(type(X1), X1.shape, get_density(X1))
+print(type(X1), X1.shape, get_density(X1))
 
 W1 = np.random.rand(k,k)
 W1 = 2 * W1 - 1
