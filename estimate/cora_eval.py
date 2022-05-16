@@ -39,10 +39,10 @@ for dM in range(0, M, tM):
 
     dM1 = min(dM + tM, M)
     Ar = []
-    cacheA = 0
+    cacheA0 = 0
     for i in range(dM, dM1):  # load A row
         row = get_row(A, i)
-        cacheA += len(row)
+        cacheA0 += len(row)
         Dram_counter += len(row)
         Ar.append(row)
 
@@ -83,8 +83,12 @@ for dM in range(0, M, tM):
         row = B1[i]
         cacheB1 += len(row)
 
+    # X2 = A * B1
+    Dram_counter += len(A.indices)  # load A
+    Dram_counter += 2 * N * K  # load X2 & store X2
+
     max_cache = max(max_cache,
-                    cacheA + cacheX0 + cacheD0,
+                    cacheA0 + cacheX0 + cacheD0,
                     cacheD0 + cacheD0 + cacheX1,
                     cacheX1 + cacheW1 + cacheB1)
 
