@@ -49,4 +49,5 @@ def gen_data(g, dataset_name: str):
 
 gen_data(dgl.data.CoraGraphDataset()[0], "cora")
 gen_data(dgl.data.PubmedGraphDataset()[0], "pubmed")
-# gen_data(dgl.data.RedditDataset()[0], "reddit")
+
+# gen_data(dgl.data.RedditDataset()[0], "reddit")  # too large

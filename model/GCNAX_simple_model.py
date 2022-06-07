@@ -111,8 +111,81 @@ def GCNAX_counter(g, tiling_para_L1, tiling_para_L2, num_MAC=16):
 
     counter_MUL_cyc /= num_MAC
 
-    print("\nGCNAX at layers = 2 , MACs =", num_MAC, ", small on chip cache.")
+    print("\nGCNAX at layers = 2 , MACs =", num_MAC, ", standard on chip cache.")
     print("MUL cycles  = ", counter_MUL_cyc)
     print("DRAM access = ", counter_DRAM_acc, "(about", (counter_DRAM_acc * 8) // (1024 * 1024), "MB)")
 
     return counter_MUL_cyc, counter_DRAM_acc
+
+
+def GCNAX_formulaic_counter(g, dens_X, tiling_para_L1, tiling_para_L2, num_MAC=16, fusion: bool = True):
+    num_N, num_F = g.ndata['feat'].size()
+    A = g.adj(scipy_fmt='csr')
+
+    M, N, K, C = num_N, num_N, num_F, num_F
+
+    dens_A = len(A.indices) / (num_N * num_N)  # 这一步算的是A本身的稀疏度，实际上应该算normalized A的，不过误差不大
+    # print(dens_A)
+    dens_X0, dens_X1 = dens_X
+
+    # dens_A  = 1
+    # dens_X0 = 1
+    # dens_X1 = 1
+
+    counter_DRAM_acc = 0
+
+    # layer 1
+    Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L1
+
+    aX = float(N * C * K) / (Tn0 * Tc0 * Tk)
+    aW = float(N * C * K) / (Tn0 * Tc0 * Tk)
+
+    if fusion:
+        aB1 = 0
+        aB2 = 0
+        aA = float(M * C * N) / (Tm * Tc0 * Tn0)
+        aO = 2 * float(M * C * N) / (Tm * Tc0 * Tn0)
+    else:
+        aB1 = float(N * C) / (Tn0 * Tc0)
+        aB2 = float(M * C * N) / (Tm * Tc1 * Tn1)
+        aA = float(M * C * N) / (Tm * Tc1 * Tn1)
+        aO = float(M * C) / (Tm * Tc1)
+
+    SX = dens_X0 * Tn0 * Tk
+    SW = Tk * Tc0
+    SB1 = Tn0 * Tc0
+    SB2 = Tn1 * Tc1
+    SA = dens_A * Tm * Tn1
+    SO = Tm * Tc1
+
+    counter_DRAM_acc += aX * SX + aW * SW + aB1 * SB1 + aB2 * SB2 + aA * SA + aO * SO
+
+    # layer 2
+    Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L2
+
+    aX = float(N * C * K) / (Tn0 * Tc0 * Tk)
+    aW = float(N * C * K) / (Tn0 * Tc0 * Tk)
+
+    if fusion:
+        aB1 = 0
+        aB2 = 0
+        aA = float(M * C * N) / (Tm * Tc0 * Tn0)
+        aO = 2 * float(M * C * N) / (Tm * Tc0 * Tn0)
+    else:
+        aB1 = float(N * C) / (Tn0 * Tc0)
+        aB2 = float(M * C * N) / (Tm * Tc1 * Tn1)
+        aA = float(M * C * N) / (Tm * Tc1 * Tn1)
+        aO = float(M * C) / (Tm * Tc1)
+
+    SX = dens_X1 * Tn0 * Tk
+    SW = Tk * Tc0
+    SB1 = Tn0 * Tc0
+    SB2 = Tn1 * Tc1
+    SA = dens_A * Tm * Tn1
+    SO = Tm * Tc1
+    counter_DRAM_acc += aX * SX + aW * SW + aB1 * SB1 + aB2 * SB2 + aA * SA + aO * SO
+
+    # print("\nGCNAX at layers = 2 , MACs =", num_MAC, ", standard on chip cache.")
+    print("DRAM access = ", counter_DRAM_acc, "(about", (counter_DRAM_acc * 8) // (1024 * 1024), "MB)")
+
+    return counter_DRAM_acc
