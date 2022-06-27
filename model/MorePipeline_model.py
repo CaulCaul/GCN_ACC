@@ -1,7 +1,7 @@
 import sys, os
 
 sys.path.append(os.getcwd())
-from functional.Accelerator import Accelerator
+from util.Accelerator import Accelerator
 import dgl
 
 g = (dgl.data.CoraGraphDataset())[0]
