@@ -1,11 +1,9 @@
-import dgl
-import pandas as pd
 import scipy.sparse
 import scipy.io
 
-import functions
+from util import functions
 
-data = scipy.io.loadmat("data/pubmed_src.mat")
+data = scipy.io.loadmat("../data/pubmed_src.mat")
 
 A = scipy.sparse.csr_matrix(data['A'])  # scipy.sparse.csr.csr_matrix
 X0 = scipy.sparse.csr_matrix(data['X0'])  # scipy.sparse.csr.csr_matrix
@@ -46,7 +44,7 @@ for dM in range(0, M, tM):
         Ar.append(row)
 
     cacheX0 = 0
-    for i in functional.mix_row(Ar):  # load X0 row
+    for i in functions.mix_row(Ar):  # load X0 row
         row = get_row(X0, i)
         cacheX0 += len(row)
         Dram_counter += len(row)
@@ -59,7 +57,7 @@ for dM in range(0, M, tM):
         D0r.append(row)
 
     cacheW0 = 0
-    for i in functional.mix_row(D0r):  # load W0 row
+    for i in functions.mix_row(D0r):  # load W0 row
         row = W0[i]
         cacheW0 += len(row)  #2
         Dram_counter += len(row)
@@ -72,7 +70,7 @@ for dM in range(0, M, tM):
         X1r.append(row)
 
     cacheW1 = 0
-    for i in functional.mix_row(X1r):  # load W1 row
+    for i in functions.mix_row(X1r):  # load W1 row
         row = W1[i]
         cacheW1 += len(row)  #1
         Dram_counter += len(row)
@@ -107,7 +105,7 @@ for dM in range(0, M, tM):
         Ar.append(row)
 
     cacheB1 = 0
-    for i in functional.mix_row(Ar):  # load B1 row
+    for i in functions.mix_row(Ar):  # load B1 row
         row = B1[i]
         cacheB1 += len(row)  #3
         Dram_counter += len(row)

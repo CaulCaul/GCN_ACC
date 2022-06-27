@@ -35,16 +35,16 @@ def gen_data(g, dataset_name: str):
     X2 = scipy.sparse.csr_matrix(X2)
     # print(type(X1), X1.shape, get_density(X2))
 
-    scipy.io.savemat('data/' + dataset_name + '_src.mat', {'A': A,
-                                                           'X0': X0,
-                                                           'W0': W0,
-                                                           'B0': B0,
-                                                           'D0': D0,
-                                                           'X1': X1,
-                                                           'W1': W1,
-                                                           'B1': B1,
-                                                           'D1': D1,
-                                                           'X2': X2})
+    scipy.io.savemat(dataset_name + '_src.mat', {'A': A,
+                                                 'X0': X0,
+                                                 'W0': W0,
+                                                 'B0': B0,
+                                                 'D0': D0,
+                                                 'X1': X1,
+                                                 'W1': W1,
+                                                 'B1': B1,
+                                                 'D1': D1,
+                                                 'X2': X2})
 
 
 gen_data(dgl.data.CoraGraphDataset()[0], "cora")

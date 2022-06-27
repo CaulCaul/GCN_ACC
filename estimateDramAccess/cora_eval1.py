@@ -1,11 +1,7 @@
-import dgl
-import pandas as pd
 import scipy.sparse
 import scipy.io
 
-import functions
-
-data = scipy.io.loadmat("data/cora_src.mat")
+data = scipy.io.loadmat("../data/cora_src.mat")
 
 A = scipy.sparse.csr_matrix(data['A'])  # scipy.sparse.csr.csr_matrix
 X0 = scipy.sparse.csr_matrix(data['X0'])  # scipy.sparse.csr.csr_matrix

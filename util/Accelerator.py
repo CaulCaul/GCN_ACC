@@ -1,4 +1,4 @@
-from functional.functional import *
+from modules import *
 
 
 class Accelerator:
