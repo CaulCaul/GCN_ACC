@@ -9,7 +9,7 @@ from util.functions import *
 load_latency = 50
 
 
-def get_num_cycle_inner(dataset: str, mac_num: int = 16):
+def get_num_cycle_inner(dataset: str, mac_num: int = 16) -> int:
     data = scipy.io.loadmat("../data/" + dataset.lower() + "_src.mat")
 
     A = scipy.sparse.csr_matrix(data['A'])  # scipy.sparse.csr.csr_matrix
@@ -51,7 +51,7 @@ def get_num_cycle_inner(dataset: str, mac_num: int = 16):
     return cycles
 
 
-def compute_cycles(A, rowIdx, B, row_wise: bool = True, debug: bool = False):
+def compute_cycles(A, rowIdx, B, row_wise: bool = True, debug: bool = False) -> int:
     cycles = load_latency
 
     v_len = len(get_row(A, rowIdx))
