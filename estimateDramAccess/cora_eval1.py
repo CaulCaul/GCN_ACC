@@ -22,19 +22,9 @@ def get_row(M: scipy.sparse.csr_matrix, rowId):
 M, N = A.shape
 K, C = W0.shape
 
-tN0, tC0, tK, tN1, tC1, tM = 2048, 16, 16, 2048, 16, 16
+print(W0.shape, W1.shape)
 
-max_cache = 0
-Dram_counter = 0
 
-for dN in range(0, N, tN0):
-    dN1 = min(N, dN + tN0)
-    for dC in range(0, C, tC0):
-        dC1 = min(C, dC + tC0)
-        for dK in range(0, K, tK):
-            dK1 = min(K, dK + dK)
-
-            pass
 
 
 

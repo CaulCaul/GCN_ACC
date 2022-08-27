@@ -1,8 +1,5 @@
-import dgl
-import numpy
-import pandas as pd
-import scipy.sparse
 import scipy.io
+import scipy.sparse
 
 from util.functions import *
 

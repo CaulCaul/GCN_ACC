@@ -1,12 +1,12 @@
-import dgl
-import numpy
-import pandas as pd
-import scipy.sparse
 import scipy.io
+import scipy.sparse
 
 from util.functions import *
 
 load_latency = 50
+
+# request_latency = 25
+# data_latency -> DDR5
 
 
 def get_num_cycle_inner(dataset: str, mac_num: int = 16) -> int:
@@ -24,9 +24,12 @@ def get_num_cycle_inner(dataset: str, mac_num: int = 16) -> int:
     X2 = scipy.sparse.csr_matrix(data['X2'])  # scipy.sparse.csr.csr_matrix
 
     M, N = A.shape
-    K, C = W0.shape
+    K0, C0 = W0.shape
+    K1, C1 = W1.shape
+    # print(M, N, K0, C0, K1, C1)
 
     cycles = 0
+    load_cycles = 0
 
     # X0_col_wise = compute_cycles(X0)
     # W0_col_wise = compute_cycles(W0, row_wise=False)
@@ -34,20 +37,23 @@ def get_num_cycle_inner(dataset: str, mac_num: int = 16) -> int:
     # W1_col_wise = compute_cycles(W1, row_wise=False)
 
     for ar in range(0, M, mac_num):
-        cycles += load_latency  # load A row
+        load_cycles += load_latency  # load A row
         cycles += compute_cycles(A, ar, X0)
 
-    for dr in range(0, N, mac_num):
-        cycles += load_latency  # load D0 row
+    for dr in range(0, M, mac_num):
+        load_cycles += load_latency  # load D0 row
         cycles += compute_cycles(D0, dr, W0, row_wise=False)
 
     for ar in range(0, M, mac_num):
-        cycles += load_latency  # load A row
+        load_cycles += load_latency  # load A row
         cycles += compute_cycles(A, ar, X1)
 
-    for dr in range(0, N, mac_num):
-        cycles += load_latency  # load D0 row
+    for dr in range(0, M, mac_num):
+        load_cycles += load_latency  # load D0 row
         cycles += compute_cycles(D1, dr, W1, row_wise=False)
+
+    print("({:d})".format(load_cycles))
+    cycles += load_cycles
     return cycles
 
 
@@ -76,6 +82,7 @@ def compute_cycles(A, rowIdx, B, row_wise: bool = True, debug: bool = False) -> 
         if debug: print("dense")
         if not row_wise:
             B = B.transpose()
+            R, C = B.shape
 
         for row in range(R - 1):
             l = len(B[row])

@@ -14,11 +14,13 @@ def get_adjacent(g):
     return A
 
 
-def GCNAX_counter(g, tiling_para_L1, tiling_para_L2, num_MAC=16):
+def GCNAX_counter(g, layer_paras, tiling_para_L1, tiling_para_L2, num_MAC=16):
     num_N, num_F = g.ndata['feat'].size()
     A = g.adj(scipy_fmt='csr')
 
-    M, N, K, C = num_N, num_N, num_F, num_F
+    M, N = num_N, num_N
+    K0, C0 = layer_paras[0], layer_paras[1]
+    K1, C1 = layer_paras[1], layer_paras[2]
     Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L1
 
     dens_A = len(A.indices) / (num_N * num_N)
@@ -29,16 +31,18 @@ def GCNAX_counter(g, tiling_para_L1, tiling_para_L2, num_MAC=16):
     # dens_X0 = 1
     # dens_X1 = 1
 
+    load_latency = 50
+
     counter_MUL_cyc = 0
     counter_DRAM_acc = 0
 
     # layer 1
     for n0 in range(0, N, Tn0):
-        for c0 in range(0, C, Tc0):
-            for k in range(0, K, Tk):
+        for c0 in range(0, C0, Tc0):
+            for k in range(0, K0, Tk):
                 Dtn0 = min(n0 + Tn0, N) - n0
-                Dtc0 = min(c0 + Tc0, C) - c0
-                Dtk = min(k + Tk, K) - k
+                Dtc0 = min(c0 + Tc0, C0) - c0
+                Dtk = min(k + Tk, K0) - k
 
                 # load elements of X
                 # load elements of W
@@ -54,7 +58,7 @@ def GCNAX_counter(g, tiling_para_L1, tiling_para_L2, num_MAC=16):
 
             for m in range(0, M, Tm):
                 Dtm = min(m + Tm, M) - m
-                Dtc1 = min(c0 + Tc0, C) - c0
+                Dtc1 = min(c0 + Tc0, C0) - c0
                 Dtn1 = min(n0 + Tn0, N) - n0
 
                 # (load elements of B)
@@ -74,11 +78,11 @@ def GCNAX_counter(g, tiling_para_L1, tiling_para_L2, num_MAC=16):
     Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L2
 
     for n0 in range(0, N, Tn0):
-        for c0 in range(0, C, Tc0):
-            for k in range(0, K, Tk):
+        for c0 in range(0, C1, Tc0):
+            for k in range(0, K1, Tk):
                 Dtn0 = min(n0 + Tn0, N) - n0
-                Dtc0 = min(c0 + Tc0, C) - c0
-                Dtk = min(k + Tk, K) - k
+                Dtc0 = min(c0 + Tc0, C1) - c0
+                Dtk = min(k + Tk, K1) - k
 
                 # load elements of X
                 # load elements of W
@@ -94,7 +98,7 @@ def GCNAX_counter(g, tiling_para_L1, tiling_para_L2, num_MAC=16):
 
             for m in range(0, M, Tm):
                 Dtm = min(m + Tm, M) - m
-                Dtc1 = min(c0 + Tc0, C) - c0
+                Dtc1 = min(c0 + Tc0, C1) - c0
                 Dtn1 = min(n0 + Tn0, N) - n0
 
                 # (load elements of B)
@@ -111,18 +115,20 @@ def GCNAX_counter(g, tiling_para_L1, tiling_para_L2, num_MAC=16):
 
     counter_MUL_cyc /= num_MAC
 
-    print("\nGCNAX at layers = 2 , MACs =", num_MAC, ", standard on chip cache.")
-    print("MUL cycles  = ", counter_MUL_cyc)
-    print("DRAM access = ", counter_DRAM_acc, "(about", (counter_DRAM_acc * 8) // (1024 * 1024), "MB)")
+    # print("GCNAX at layers = 2 , MACs =", num_MAC, ", standard on chip cache.")
+    print("MUL cycles = {:10.2f}".format(counter_MUL_cyc), end=" | ")
+    print("DRAM access = {:10.2f}".format(counter_DRAM_acc), "(about", "{:.2f}".format((counter_DRAM_acc * 8) / (1024 * 1024)), "MB)")
 
     return counter_MUL_cyc, counter_DRAM_acc
 
 
-def GCNAX_formulaic_counter(g, dens_X, tiling_para_L1, tiling_para_L2, num_MAC=16, fusion: bool = True):
+def GCNAX_formulaic_counter(g, layer_paras, dens_X, tiling_para_L1, tiling_para_L2, num_MAC=16, fusion: bool = True):
     num_N, num_F = g.ndata['feat'].size()
     A = g.adj(scipy_fmt='csr')
 
-    M, N, K, C = num_N, num_N, num_F, num_F
+    M, N = num_N, num_N
+    K0, C0 = layer_paras[0], layer_paras[1]
+    K1, C1 = layer_paras[1], layer_paras[2]
 
     dens_A = len(A.indices) / (num_N * num_N)  # 这一步算的是A本身的稀疏度，实际上应该算normalized A的，不过误差不大
     # print(dens_A)
@@ -137,19 +143,19 @@ def GCNAX_formulaic_counter(g, dens_X, tiling_para_L1, tiling_para_L2, num_MAC=1
     # layer 1
     Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L1
 
-    aX = float(N * C * K) / (Tn0 * Tc0 * Tk)
-    aW = float(N * C * K) / (Tn0 * Tc0 * Tk)
+    aX = float(N * C0 * K0) / (Tn0 * Tc0 * Tk)
+    aW = float(N * C0 * K0) / (Tn0 * Tc0 * Tk)
 
     if fusion:
         aB1 = 0
         aB2 = 0
-        aA = float(M * C * N) / (Tm * Tc0 * Tn0)
-        aO = 2 * float(M * C * N) / (Tm * Tc0 * Tn0)
+        aA = float(M * C0 * N) / (Tm * Tc0 * Tn0)
+        aO = 2 * float(M * C0 * N) / (Tm * Tc0 * Tn0)
     else:
-        aB1 = float(N * C) / (Tn0 * Tc0)
-        aB2 = float(M * C * N) / (Tm * Tc1 * Tn1)
-        aA = float(M * C * N) / (Tm * Tc1 * Tn1)
-        aO = float(M * C) / (Tm * Tc1)
+        aB1 = float(N * C0) / (Tn0 * Tc0)
+        aB2 = float(M * C0 * N) / (Tm * Tc1 * Tn1)
+        aA = float(M * C0 * N) / (Tm * Tc1 * Tn1)
+        aO = float(M * C0) / (Tm * Tc1)
 
     SX = dens_X0 * Tn0 * Tk
     SW = Tk * Tc0
@@ -163,19 +169,19 @@ def GCNAX_formulaic_counter(g, dens_X, tiling_para_L1, tiling_para_L2, num_MAC=1
     # layer 2
     Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L2
 
-    aX = float(N * C * K) / (Tn0 * Tc0 * Tk)
-    aW = float(N * C * K) / (Tn0 * Tc0 * Tk)
+    aX = float(N * C1 * K1) / (Tn0 * Tc0 * Tk)
+    aW = float(N * C1 * K1) / (Tn0 * Tc0 * Tk)
 
     if fusion:
         aB1 = 0
         aB2 = 0
-        aA = float(M * C * N) / (Tm * Tc0 * Tn0)
-        aO = 2 * float(M * C * N) / (Tm * Tc0 * Tn0)
+        aA = float(M * C1 * N) / (Tm * Tc0 * Tn0)
+        aO = 2 * float(M * C1 * N) / (Tm * Tc0 * Tn0)
     else:
-        aB1 = float(N * C) / (Tn0 * Tc0)
-        aB2 = float(M * C * N) / (Tm * Tc1 * Tn1)
-        aA = float(M * C * N) / (Tm * Tc1 * Tn1)
-        aO = float(M * C) / (Tm * Tc1)
+        aB1 = float(N * C1) / (Tn0 * Tc0)
+        aB2 = float(M * C1 * N) / (Tm * Tc1 * Tn1)
+        aA = float(M * C1 * N) / (Tm * Tc1 * Tn1)
+        aO = float(M * C1) / (Tm * Tc1)
 
     SX = dens_X1 * Tn0 * Tk
     SW = Tk * Tc0
@@ -185,7 +191,14 @@ def GCNAX_formulaic_counter(g, dens_X, tiling_para_L1, tiling_para_L2, num_MAC=1
     SO = Tm * Tc1
     counter_DRAM_acc += aX * SX + aW * SW + aB1 * SB1 + aB2 * SB2 + aA * SA + aO * SO
 
+    cycle_counter = 0
+    cycle_counter += dens_X0 * math.ceil(N / Tn0) * math.ceil(C0 / Tc0) * math.ceil(K0 / Tk) * Tn0 * Tk
+    cycle_counter += dens_A * math.ceil(M / Tm) * math.ceil(C0 / Tc1) * math.ceil(N / Tn1) * Tm * Tn1
+    cycle_counter += dens_X0 * math.ceil(N / Tn0) * math.ceil(C1 / Tc0) * math.ceil(K1 / Tk) * Tn0 * Tk
+    cycle_counter += dens_A * math.ceil(M / Tm) * math.ceil(C1 / Tc1) * math.ceil(N / Tn1) * Tm * Tn1
+
     # print("\nGCNAX at layers = 2 , MACs =", num_MAC, ", standard on chip cache.")
-    print("DRAM access = ", counter_DRAM_acc, "(about", (counter_DRAM_acc * 8) // (1024 * 1024), "MB)")
+    print("MUL cycles = {:10.2f}".format(cycle_counter), end=" | ")
+    print("DRAM access = {:10.2f}".format(counter_DRAM_acc), "(about", "{:.2f}".format((counter_DRAM_acc * 8) / (1024 * 1024)), "MB)")
 
     return counter_DRAM_acc

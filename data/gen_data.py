@@ -1,6 +1,8 @@
-import dgl
 import numpy as np
-import scipy.io, scipy.sparse
+import dgl
+import scipy.io
+import scipy.sparse
+import gcn_model
 
 
 def get_density(M):
@@ -13,8 +15,7 @@ def gen_data(g, dataset_name: str):
     A = g.adj(scipy_fmt="csr")
     X0 = scipy.sparse.csr_matrix(g.ndata['feat'])
     n, k = X0.shape
-    W0 = np.random.rand(k, k)
-    W0 = 2 * W0 - 1
+    W0, W1 = gcn_model.train(g)
     # print(type(W0))
     B0 = X0.dot(W0)
     # print(type(B0), B0.shape)
@@ -25,8 +26,6 @@ def gen_data(g, dataset_name: str):
     X1 = scipy.sparse.csr_matrix(X1)
     print(type(X1), X1.shape, get_density(X1))
 
-    W1 = np.random.rand(k, k)
-    W1 = 2 * W1 - 1
     B1 = X1 * W1
     D1 = A * X1
 
@@ -47,7 +46,12 @@ def gen_data(g, dataset_name: str):
                                                  'X2': X2})
 
 
-gen_data(dgl.data.CoraGraphDataset()[0], "cora")
+# gen_data(dgl.data.CoraGraphDataset()[0], "cora")
 gen_data(dgl.data.PubmedGraphDataset()[0], "pubmed")
 
 # gen_data(dgl.data.RedditDataset()[0], "reddit")  # too large
+
+
+
+
+
