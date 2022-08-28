@@ -34,6 +34,7 @@ def GCNAX_counter(g, layer_paras, tiling_para_L1, tiling_para_L2, num_MAC=16):
     load_latency = 50
 
     counter_MUL_cyc = 0
+    counter_load_cyc = 0
     counter_DRAM_acc = 0
 
     # layer 1
@@ -126,6 +127,8 @@ def GCNAX_formulaic_counter(g, layer_paras, dens_X, tiling_para_L1, tiling_para_
     num_N, num_F = g.ndata['feat'].size()
     A = g.adj(scipy_fmt='csr')
 
+    load_latency = 50
+
     M, N = num_N, num_N
     K0, C0 = layer_paras[0], layer_paras[1]
     K1, C1 = layer_paras[1], layer_paras[2]
@@ -197,8 +200,30 @@ def GCNAX_formulaic_counter(g, layer_paras, dens_X, tiling_para_L1, tiling_para_
     cycle_counter += dens_X0 * math.ceil(N / Tn0) * math.ceil(C1 / Tc0) * math.ceil(K1 / Tk) * Tn0 * Tk
     cycle_counter += dens_A * math.ceil(M / Tm) * math.ceil(C1 / Tc1) * math.ceil(N / Tn1) * Tm * Tn1
 
+    load_cyc_counter = 0
+    Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L1
+    load_cyc_counter += load_latency * math.ceil(N / Tn0) * math.ceil(C0 / Tc0) * math.ceil(K0 / Tk) * 2  # layer 1: load X0, W0
+    Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L2
+    load_cyc_counter += load_latency * math.ceil(N / Tn0) * math.ceil(C1 / Tc0) * math.ceil(K1 / Tk) * 2  # layer 2: load X0, W0
+
+    if fusion:
+        Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L1
+        load_cyc_counter += load_latency * math.ceil(N / Tn0) * math.ceil(C0 / Tc0) * math.ceil(M / Tm) * 3  # layer 1: load A,O, store O
+        Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L2
+        load_cyc_counter += load_latency * math.ceil(N / Tn0) * math.ceil(C1 / Tc0) * math.ceil(M / Tm) * 3  # layer 2: load A,O, store O
+    else:
+        Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L1
+        load_cyc_counter += load_latency * math.ceil(N / Tn0) * math.ceil(C0 / Tc0) * math.ceil(K0 / Tk)  # layer 1: store B
+        Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L2
+        load_cyc_counter += load_latency * math.ceil(N / Tn0) * math.ceil(C1 / Tc0) * math.ceil(K1 / Tk)  # layer 2: store B
+        Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L1
+        load_cyc_counter += load_latency * math.ceil(M / Tm) * math.ceil(C0 / Tc1) * math.ceil(N / Tn1) * 4  # layer 1: load B,A,O, store O
+        Tn0, Tc0, Tk, Tn1, Tc1, Tm = tiling_para_L2
+        load_cyc_counter += load_latency * math.ceil(M / Tm) * math.ceil(C1 / Tc1) * math.ceil(N / Tn1) * 4  # layer 2: load B,A,O, store O
+
     # print("\nGCNAX at layers = 2 , MACs =", num_MAC, ", standard on chip cache.")
     print("MUL cycles = {:10.2f}".format(cycle_counter), end=" | ")
+    print("Load cycles = {:10.2f}".format(load_cyc_counter), end=" | ")
     print("DRAM access = {:10.2f}".format(counter_DRAM_acc), "(about", "{:.2f}".format((counter_DRAM_acc * 8) / (1024 * 1024)), "MB)")
 
     return counter_DRAM_acc

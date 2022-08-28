@@ -6,7 +6,7 @@ from util.functions import *
 load_latency = 50
 
 
-def get_num_cycle_rowbase(dataset: str, mac_num: int = 16) -> int:
+def get_num_cycle_rowbase(dataset: str, mac_num: int = 16) -> (int, int):
     data = scipy.io.loadmat("../data/" + dataset.lower() + "_src.mat")
 
     A = scipy.sparse.csr_matrix(data['A'])  # scipy.sparse.csr.csr_matrix
@@ -23,22 +23,29 @@ def get_num_cycle_rowbase(dataset: str, mac_num: int = 16) -> int:
     M, N = A.shape
     K, C = W0.shape
 
-    cycles = 0
-    cycles += compute_cycles(A, X0, mac_num)
-    cycles += compute_cycles(D0, W0, mac_num)
-    cycles += compute_cycles(A, X1, mac_num)
-    cycles += compute_cycles(D1, W1, mac_num)
-
-    return cycles
+    mul_cycles, load_cycles = 0, 0
+    m, l = compute_cycles(A, X0, mac_num)
+    mul_cycles += m
+    load_cycles += l
+    m, l = compute_cycles(D0, W0, mac_num)
+    mul_cycles += m
+    load_cycles += l
+    m, l = compute_cycles(A, X1, mac_num)
+    mul_cycles += m
+    load_cycles += l
+    m, l = compute_cycles(D1, W1, mac_num)
+    mul_cycles += m
+    load_cycles += l
+    return mul_cycles, load_cycles
 
 
 def compute_cycles(A: scipy.sparse.csr.csr_matrix, B: scipy.sparse.csr.csr_matrix, mac_num: int) -> int:
     M, N = A.shape
-    cycles = 0
+    mul_cycles, load_cycles = 0, 0
 
     for ar in range(0, M, mac_num):
         ar1 = min(ar + mac_num, M)
-        cycles += load_latency * 2  # load A, then load B
+        load_cycles += load_latency * 2  # load A, then load B
 
         tmp_cycles = 0
         for i in range(ar, ar1):
@@ -46,7 +53,9 @@ def compute_cycles(A: scipy.sparse.csr.csr_matrix, B: scipy.sparse.csr.csr_matri
             for j in row:
                 tmp_cycles += len(get_row(B, j))
 
-        cycles += tmp_cycles // mac_num
+        mul_cycles += tmp_cycles // mac_num
 
-    return cycles
+        load_cycles += load_latency
+
+    return mul_cycles, load_cycles
 
